@@ -35,8 +35,18 @@ include (GenerateProto)
 generate_proto(
     FILE proto/mrpc.proto
     GENERATE_PATH ${CMAKE_CURRENT_BINARY_DIR}/proto
-    OUTPUT_FILE ACC_ENGINEER_SERVICE_PROTO_FILES
+    OUTPUT_FILE MRPC_RPC_PROTO_FILES
     IMPORT_PATH proto/ ${MRPC_PROTO_IMPORT_PATH}
 )
 
 set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto PARENT_SCOPE)
+
+add_library(mrpc_proto_gen ${MRPC_RPC_PROTO_FILES})
+target_link_libraries(mrpc_proto_gen PUBLIC protobuf::libprotobuf)
+target_include_directories(mrpc_proto_gen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto)
+
+set(MRPC_SRCS
+    include/detail/await_error.hpp)
+
+add_library(mrpc STATIC ${MRPC_SRCS})
+target_link_libraries(mrpc mrpc_proto_gen)
