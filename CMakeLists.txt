@@ -49,4 +49,4 @@ set(MRPC_SRCS
     "include/await_error.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS})
-target_link_libraries(mrpc PUBLIC mrpc_proto_gen PRIVATE Boost::asio Boost::system)
+target_link_libraries(mrpc PUBLIC mrpc_proto_gen Boost::asio Boost::system)
