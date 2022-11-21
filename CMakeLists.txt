@@ -38,8 +38,9 @@ generate_proto(
     OUTPUT_FILE MRPC_RPC_PROTO_FILES
     IMPORT_PATH proto/ ${MRPC_PROTO_IMPORT_PATH}
 )
-
-set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto PARENT_SCOPE)
+if (NOT PROJECT_IS_TOP_LEVEL)
+    set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto PARENT_SCOPE)
+endif ()
 
 add_library(mrpc_proto_gen ${MRPC_RPC_PROTO_FILES})
 target_link_libraries(mrpc_proto_gen PUBLIC protobuf::libprotobuf)
