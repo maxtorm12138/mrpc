@@ -54,4 +54,4 @@ endfunction()
 
 generate_proto(proto/ proto/rpc.proto ${CMAKE_CURRENT_BINARY_DIR}/proto PROTO_FILE)
 
-set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto PARENT_SCOPE)
