@@ -46,7 +46,7 @@ target_link_libraries(mrpc_proto_gen PUBLIC protobuf::libprotobuf)
 target_include_directories(mrpc_proto_gen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto)
 
 set(MRPC_SRCS
-    include/detail/await_error.hpp)
+    "include/await_error.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS})
-target_link_libraries(mrpc mrpc_proto_gen)
+target_link_libraries(mrpc PUBLIC mrpc_proto_gen PRIVATE Boost::asio Boost::system)
