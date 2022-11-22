@@ -6,5 +6,6 @@
 namespace mrpc {
 using detail::make_error_code;
 using detail::system_error;
+using detail::system_error_category;
 } // namespace mrpc
 #endif
