@@ -54,10 +54,11 @@ set(MRPC_SRCS
     "include/mrpc/detail/error_code.hpp"
     "src/mrpc/detail/error_code.cpp"
     "include/mrpc/await_error.hpp"
-    "include/mrpc/error_code.hpp")
+    "include/mrpc/error_code.hpp"
+    "include/mrpc/method.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
-target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system)
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system msft_proxy)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 add_library(mrpc::mrpc ALIAS mrpc)
 
