@@ -1,5 +1,5 @@
-#ifndef MRPC_DETAIL_AWAIT_ERROR_H
-#define MRPC_DETAIL_AWAIT_ERROR_H
+#ifndef MRPC_AWAIT_ERROR_H
+#define MRPC_AWAIT_ERROR_H
 #include <boost/asio/use_awaitable.hpp>
 #include <boost/asio/redirect_error.hpp>
 

@@ -13,6 +13,7 @@ FetchContent_Declare(
   GIT_TAG        v1.11.0
 )
 
+unset(BUILD_TESTING)
 FetchContent_Declare(
     msft_proxy
     GIT_REPOSITORY https://github.com/microsoft/proxy.git
@@ -27,7 +28,7 @@ FetchContent_Declare(
 )
 
 set(Protobuf_USE_STATIC_LIBS ON)
-set(protobuf_INSTALL OFF)
+option(protobuf_INSTALL OFF)
 FetchContent_Declare(
     protobuf
     GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
@@ -41,22 +42,24 @@ include (GenerateProto)
 generate_proto(
     FILE proto/mrpc.proto
     GENERATE_PATH ${CMAKE_CURRENT_BINARY_DIR}/proto
-    OUTPUT_FILE MRPC_RPC_PROTO_FILES
+    OUTPUT_FILE MRPC_RPC_PROTO_SRCS
     IMPORT_PATH proto/ ${MRPC_PROTO_IMPORT_PATH}
 )
-if (NOT PROJECT_IS_TOP_LEVEL)
-    set(MRPC_PROTO_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/proto PARENT_SCOPE)
-endif ()
 
-add_library(mrpc_proto_gen STATIC ${MRPC_RPC_PROTO_FILES})
-target_link_libraries(mrpc_proto_gen PUBLIC protobuf::libprotobuf)
-target_include_directories(mrpc_proto_gen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto)
+add_library(mrpc_proto INTERFACE)
+target_include_directories(mrpc_proto INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+add_library(mrpc::proto ALIAS mrpc_proto)
 
 set(MRPC_SRCS
-    "include/await_error.hpp")
+    "include/mrpc/detail/error_code.hpp"
+    "src/mrpc/detail/error_code.cpp"
+    "include/mrpc/await_error.hpp"
+    "include/mrpc/error_code.hpp")
 
-add_library(mrpc STATIC ${MRPC_SRCS})
-target_link_libraries(mrpc PUBLIC mrpc_proto_gen Boost::asio Boost::system)
+add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system)
+target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
+add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
     add_executable(test_proto_gen "test/test_proto_gen.cpp")
