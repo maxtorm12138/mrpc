@@ -7,7 +7,7 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "-DMRPC_BUILD_TESTS=1",
+      "cmakeCommandArgs": "-DMRPC_BUILD_TESTS=1 -DCPM_SOURCE_CACHE=E:\\Code\\cpm_packages",
       "buildCommandArgs": "",
       "ctestCommandArgs": ""
     }

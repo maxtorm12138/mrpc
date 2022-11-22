@@ -6,33 +6,36 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
 
+include (CPM)
 
-FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG        v1.11.0
+CPMAddPackage(
+  NAME spdlog
+  VERSION 1.11.0
+  GITHUB_REPOSITORY gabime/spdlog
+  GIT_TAG "v1.11.0"
 )
 
-unset(BUILD_TESTING)
-FetchContent_Declare(
-    msft_proxy
-    GIT_REPOSITORY https://github.com/microsoft/proxy.git
-    GIT_TAG        1.1.1
+CPMAddPackage(
+    NAME msft_proxy
+    VERSION 1.1.1
+    GITHUB_REPOSITORY microsoft/proxy
+    GIT_TAG "1.1.1"
 )
 
-FetchContent_Declare(
-    Boost
-    GIT_REPOSITORY https://github.com/boostorg/boost.git
-    GIT_TAG        boost-1.81.0.beta1
-    GIT_SHALLOW TRUE
+CPMAddPackage(
+    NAME Boost
+    VERSION 1.81.0
+    GITHUB_REPOSITORY boostorg/boost
+    GIT_TAG "boost-1.81.0.beta1"
 )
 
-set(Protobuf_USE_STATIC_LIBS ON)
-option(protobuf_INSTALL OFF)
-FetchContent_Declare(
-    protobuf
-    GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
-    GIT_TAG         v21.9
+CPMAddPackage(
+    NAME protobuf
+    VERSION 21.9
+    GITHUB_REPOSITORY protocolbuffers/protobuf
+    GIT_TAG "v21.9"
+    OPTIONS "protobuf_INSTALL OFF" "Protobuf_USE_STATIC_LIBS ON"
+       
 )
 
 FetchContent_MakeAvailable(spdlog msft_proxy Boost protobuf)
@@ -64,5 +67,5 @@ add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
     add_executable(test_proto_gen "test/test_proto_gen.cpp")
-    target_link_libraries(test_proto_gen mrpc_proto_gen)
+    target_link_libraries(test_proto_gen mrpc)
 endif()

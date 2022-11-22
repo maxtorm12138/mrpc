@@ -1,5 +1,9 @@
 
 function(generate_proto)
+    if (NOT TARGET protobuf::protoc OR NOT TARGET protobuf::libprotobuf)
+        message(FATAL_ERROR "could not find protoc")
+    endif()
+
     get_target_property(PROTOBUF_IMPORT_PATH protobuf::libprotobuf INTERFACE_INCLUDE_DIRECTORIES)
     foreach(IMPORT_PATH IN LISTS PROTOBUF_IMPORT_PATH)
         get_filename_component(IMPORT_PATH ${IMPORT_PATH} ABSOLUTE)
@@ -24,9 +28,6 @@ function(generate_proto)
 
     file(MAKE_DIRECTORY ${GENERATE_PROTO_GENERATE_PATH})
         
-    if (NOT TARGET protobuf::protoc)
-        message(FATAL_ERROR "could not find protoc")
-    endif()
 
     foreach(IMPORT_PATH ${GENERATE_PROTO_IMPORT_PATH})
         get_filename_component(IMPORT_PATH ${IMPORT_PATH} ABSOLUTE)
