@@ -16,13 +16,6 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
-    NAME msft_proxy
-    VERSION 1.1.1
-    GITHUB_REPOSITORY microsoft/proxy
-    GIT_TAG "1.1.1"
-)
-
-CPMAddPackage(
     NAME Boost
     VERSION 1.81.0
     GITHUB_REPOSITORY boostorg/boost
@@ -37,8 +30,6 @@ CPMAddPackage(
     OPTIONS "protobuf_INSTALL OFF" "Protobuf_USE_STATIC_LIBS ON"
 )
 
-
-FetchContent_MakeAvailable(spdlog msft_proxy Boost protobuf)
 
 include (GenerateProto)
 
