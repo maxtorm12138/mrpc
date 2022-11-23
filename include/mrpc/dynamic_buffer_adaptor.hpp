@@ -30,12 +30,15 @@ public:
 
     size_t size() const;
 
+    void shrink(size_t n);
+
 private:
     std::any holder_;
     std::function<net::mutable_buffer(size_t, size_t)> data_;
     std::function<net::const_buffer(size_t, size_t)> const_data_;
     std::function<void(size_t)> grow_;
     std::function<size_t()> size_;
+    std::function<void(size_t)> shrink_;
 };
 
 template<typename Elem, typename Allocator>
@@ -47,6 +50,7 @@ dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_vector_buffer<Elem, 
     const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->data(pos, n); };
     grow_ = [this](size_t n) { std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->grow(n); };
     size_ = [this]() { return std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->size(); };
+    shrink_ = [this](size_t n) { std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->shrink(n); };
 }
 
 template<typename Elem, typename Traits, typename Allocator>
@@ -58,6 +62,7 @@ dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_string_buffer<Elem, 
     const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->data(pos, n); };
     grow_ = [this](size_t n) { std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->grow(n); };
     size_ = [this]() { return std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->size(); };
+    shrink_ = [this](size_t n) { std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->shrink(n); };
 }
 } // namespace mrpc
 

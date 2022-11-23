@@ -60,7 +60,7 @@ set(MRPC_SRCS
     "src/mrpc/dynamic_buffer_adaptor.cpp"
     "include/mrpc/await_error.hpp"
     "src/mrpc/await_error.cpp"
-    "include/mrpc/error_code.hpp"
+    "include/mrpc/packet_handler.hpp"
     "include/mrpc/method.hpp"
     "include/mrpc/mrpc.hpp")
 

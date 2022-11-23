@@ -22,4 +22,9 @@ size_t dynamic_buffer_adaptor::size() const
     return size_();
 }
 
+void dynamic_buffer_adaptor::shrink(size_t n)
+{
+    shrink_(n);
+}
+
 } // namespace mrpc
