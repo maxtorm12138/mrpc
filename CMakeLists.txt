@@ -35,7 +35,14 @@ CPMAddPackage(
     GITHUB_REPOSITORY protocolbuffers/protobuf
     GIT_TAG "v21.9"
     OPTIONS "protobuf_INSTALL OFF" "Protobuf_USE_STATIC_LIBS ON"
-       
+)
+
+CPMAddPackage(
+    NAME googletest
+    VERSION 1.12.1
+    GITHUB_REPOSITORY  google/googletest 
+    GIT_TAG "release-1.12.1"
+    OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt ON"
 )
 
 FetchContent_MakeAvailable(spdlog msft_proxy Boost protobuf)
@@ -56,7 +63,10 @@ add_library(mrpc::proto ALIAS mrpc_proto)
 set(MRPC_SRCS
     "include/mrpc/detail/error_code.hpp"
     "src/mrpc/detail/error_code.cpp"
+    "include/mrpc/detail/dynamic_buffer.hpp"
+    "src/mrpc/detail/dynamic_buffer.cpp"
     "include/mrpc/await_error.hpp"
+    "src/mrpc/await_error.cpp"
     "include/mrpc/error_code.hpp"
     "include/mrpc/method.hpp"
     "include/mrpc/mrpc.hpp")
@@ -64,7 +74,7 @@ set(MRPC_SRCS
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
 target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system msft_proxy)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
-target_compile_definitions(mrpc PUBLIC $<${WIN32}:_WIN32_WINNT=0x0A00>)
+target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00>)
 add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
