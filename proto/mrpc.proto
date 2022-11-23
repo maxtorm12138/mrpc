@@ -3,7 +3,7 @@ package mrpc;
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.MessageOptions {
-  optional uint64 cmd_id = 50000;
+  optional int32 cmd_id = 50000;
   optional bool no_reply = 50001;
 }
 
