@@ -1,9 +1,6 @@
 #ifndef MRPC_METHOD_H
 #define MRPC_METHOD_H
 
-// msft proxy
-#include <proxy.h>
-
 // boost
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/buffer.hpp>
@@ -32,6 +29,7 @@ class abstract_method : public boost::noncopyable
 {
 public:
     virtual net::awaitable<sys::error_code> operator()(context ctx, net::const_buffer request, dynamic_buffer_adaptor response) = 0;
+    virtual ~abstract_method() = default;
 };
 
 template<typename Method>

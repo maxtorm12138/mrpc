@@ -65,7 +65,7 @@ set(MRPC_SRCS
     "include/mrpc/mrpc.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
-target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system msft_proxy)
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system spdlog::spdlog)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED)
 add_library(mrpc::mrpc ALIAS mrpc)

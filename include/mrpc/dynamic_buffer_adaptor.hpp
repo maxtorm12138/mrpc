@@ -5,7 +5,6 @@
 
 #include <boost/asio/buffer.hpp>
 
-#include <proxy.h>
 
 namespace mrpc {
 namespace net = boost::asio;
@@ -22,13 +21,13 @@ public:
     dynamic_buffer_adaptor(net::dynamic_string_buffer<Elem, Traits, Allocator> real_dynamic_buffer);
 
 public:
-    net::mutable_buffer data(size_t pos, size_t n);
+    [[nodiscard]] net::mutable_buffer data(size_t pos, size_t n);
 
-    net::const_buffer data(size_t pos, size_t n) const;
+    [[nodiscard]] net::const_buffer data(size_t pos, size_t n) const;
 
     void grow(size_t n);
 
-    size_t size() const;
+    [[nodiscard]] size_t size() const;
 
     void shrink(size_t n);
 
@@ -45,7 +44,7 @@ template<typename Elem, typename Allocator>
 dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_vector_buffer<Elem, Allocator> real_dynamic_buffer)
     : holder_(std::move(real_dynamic_buffer))
 {
-    static_assert(sizeof(Elem) == 1, "Elem size == 1 is requred");
+    static_assert(sizeof(Elem) == 1, "Elem size == 1 is required");
     data_ = [this](size_t pos, size_t n) { return std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->data(pos, n); };
     const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->data(pos, n); };
     grow_ = [this](size_t n) { std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->grow(n); };
@@ -57,7 +56,7 @@ template<typename Elem, typename Traits, typename Allocator>
 dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_string_buffer<Elem, Traits, Allocator> real_dynamic_buffer)
     : holder_(std::move(real_dynamic_buffer))
 {
-    static_assert(sizeof(Elem) == 1, "Elem size == 1 is requred");
+    static_assert(sizeof(Elem) == 1, "Elem size == 1 is required");
     data_ = [this](size_t pos, size_t n) { return std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->data(pos, n); };
     const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->data(pos, n); };
     grow_ = [this](size_t n) { std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->grow(n); };
