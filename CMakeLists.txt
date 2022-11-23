@@ -54,8 +54,8 @@ target_include_directories(mrpc_proto INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/prot
 add_library(mrpc::proto ALIAS mrpc_proto)
 
 set(MRPC_SRCS
-    "include/mrpc/detail/error_code.hpp"
-    "src/mrpc/detail/error_code.cpp"
+    "include/mrpc/error_code.hpp"
+    "src/mrpc/error_code.cpp"
     "include/mrpc/dynamic_buffer_adaptor.hpp"
     "src/mrpc/dynamic_buffer_adaptor.cpp"
     "include/mrpc/await_error.hpp"
