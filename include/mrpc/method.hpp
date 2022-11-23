@@ -25,6 +25,7 @@ class stub;
 struct context
 {
     std::weak_ptr<stub> stub;
+    std::string trace;
 };
 
 class abstract_method : public boost::noncopyable

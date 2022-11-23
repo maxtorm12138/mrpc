@@ -17,5 +17,5 @@ enum MessageFlag
 message Cookie
 {
 	uint64 error_code = 1;
-	uint64 trace_id = 2;
+	string trace = 2;
 }
