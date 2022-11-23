@@ -15,6 +15,11 @@ net::const_buffer dynamic_buffer_adaptor::data(size_t pos, size_t n) const
 void dynamic_buffer_adaptor::grow(size_t n)
 {
     return grow_(n);
-};
+}
+
+size_t dynamic_buffer_adaptor::size() const
+{
+    return size_();
+}
 
 } // namespace mrpc

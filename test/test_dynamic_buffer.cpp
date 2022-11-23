@@ -16,6 +16,7 @@ TEST(DynamicBufferAdaptorTest, DynamicStringBuffer)
 
     EXPECT_EQ(source, dest);
     EXPECT_EQ(dest, "Hello World");
+    EXPECT_EQ(adaptor.size(), source.size());
 }
 
 TEST(DynamicBufferAdaptorTest, DynamicVectorBuffer)
@@ -32,4 +33,5 @@ TEST(DynamicBufferAdaptorTest, DynamicVectorBuffer)
     mrpc::net::buffer_copy(dst, src);
 
     EXPECT_EQ(source, dest);
+    EXPECT_EQ(adaptor.size(), source.size());
 }
