@@ -55,7 +55,7 @@ public:
     using request_type = typename Method::Request;
     using response_type = typename Method::Response;
 
-    method(Implement implement);
+    explicit method(Implement implement);
 
     net::awaitable<sys::error_code> operator()(context ctx, net::const_buffer request, dynamic_buffer_adaptor response) override;
 

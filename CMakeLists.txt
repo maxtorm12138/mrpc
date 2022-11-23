@@ -71,6 +71,13 @@ target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> B
 add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
+    
+    macro(mrpc_add_test)
+        cmake_parse_arguments(MRPC_TEST "" "TARGET" "FILES;LIBRARIES" ${ARGN})
+        add_executable(${MRPC_TEST_TARGET} ${MRPC_TEST_FILES})
+        target_link_libraries(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_LIBRARIES})
+        # target_compile_options(${MRPC_TEST_TARGET} -fno-access-control)
+    endmacro()
 
     CPMAddPackage(
         NAME googletest
@@ -81,10 +88,23 @@ if (MRPC_BUILD_TESTS)
     )
 
     include(GoogleTest)
+       
+    mrpc_add_test(
+        TARGET test_proto_gen
+        FILES "test/test_proto_gen.cpp"
+        LIBRARIES mrpc
+    )
 
-    add_executable(test_proto_gen "test/test_proto_gen.cpp")
-    target_link_libraries(test_proto_gen mrpc)
-
-    add_executable(test_dynamic_buffer "test/test_dynamic_buffer.cpp")
-    target_link_libraries(test_dynamic_buffer mrpc gtest_main)
+    mrpc_add_test(
+        TARGET test_dynamic_buffer
+        FILES  "test/test_dynamic_buffer.cpp"
+        LIBRARIES mrpc GTest::gtest_main
+    )
+    
+    mrpc_add_test(
+        TARGET test_packet_handler
+        FILES "test/test_packet_handler.cpp"
+        LIBRARIES mrpc GTest::gtest
+    )
 endif()
+
