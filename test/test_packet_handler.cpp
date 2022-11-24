@@ -25,6 +25,7 @@ protected:
                 std::rethrow_exception(ex);
             }
         });
+        io_context_->run();
     }
 
     std::unique_ptr<net::io_context> io_context_;
