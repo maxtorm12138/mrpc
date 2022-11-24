@@ -9,6 +9,14 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
 include (CPM)
 
 CPMAddPackage(
+    NAME msft_proxy
+    VERSION 1.1.1
+    GITHUB_REPOSITORY microsoft/proxy
+    GIT_TAG "1.1.1"
+    OPTIONS "BUILD_TESTING OFF"
+)
+
+CPMAddPackage(
   NAME spdlog
   VERSION 1.11.0
   GITHUB_REPOSITORY gabime/spdlog
@@ -56,18 +64,18 @@ set(MRPC_SRCS
     "include/mrpc/mrpc.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
-target_link_libraries(mrpc PUBLIC protobuf::libprotobuf Boost::asio Boost::system spdlog::spdlog)
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio PRIVATE spdlog::spdlog msft_proxy)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED)
 add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
-    
+
     macro(mrpc_add_test)
         cmake_parse_arguments(MRPC_TEST "" "TARGET" "FILES;LIBRARIES" ${ARGN})
         add_executable(${MRPC_TEST_TARGET} ${MRPC_TEST_FILES})
         target_link_libraries(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_LIBRARIES})
-        # target_compile_options(${MRPC_TEST_TARGET} -fno-access-control)
+        target_compile_options(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:-fno-access-control>)
     endmacro()
 
     CPMAddPackage(
@@ -91,6 +99,7 @@ if (MRPC_BUILD_TESTS)
         FILES  "test/test_dynamic_buffer.cpp"
         LIBRARIES mrpc GTest::gtest_main
     )
+    gtest_discover_tests(test_dynamic_buffer)
     
     mrpc_add_test(
         TARGET test_packet_handler

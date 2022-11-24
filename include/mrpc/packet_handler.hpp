@@ -134,7 +134,7 @@ private:
     net::basic_datagram_socket<Protocol, Executor> socket_;
 };
 
-template<typename Container, typename Channel = net::experimental::channel<Container>>
+template<typename Container, typename Channel = net::experimental::channel<void(sys::error_code, Container)>>
 class channel_packet_handler : public abstract_packet_handler
 {
 public:
@@ -153,7 +153,7 @@ public:
 
         net::buffer_copy(net::buffer(container), packet);
 
-        co_await out_.async_send(std::move(container), await_error(ec));
+        co_await out_.async_send({}, std::move(container), await_error(ec));
         co_return translate(ec);
     }
 
@@ -182,7 +182,7 @@ public:
         container.resize(packet.size());
 
         net::buffer_copy(net::buffer(container), packet);
-        co_await in_.async_send(std::move(container), await_error(ec));
+        co_await in_.async_send({}, std::move(container), await_error(ec));
         co_return translate(ec);
     }
 

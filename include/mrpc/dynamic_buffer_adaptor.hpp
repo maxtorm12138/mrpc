@@ -2,9 +2,8 @@
 #define MRPC_DETAIL_DYNAMIC_BUFFER_HPP
 
 #include <any>
-
 #include <boost/asio/buffer.hpp>
-
+#include <proxy.h>
 
 namespace mrpc {
 namespace net = boost::asio;
@@ -12,13 +11,11 @@ using namespace std::placeholders;
 
 class dynamic_buffer_adaptor
 {
-
 public:
-    template<typename Elem, typename Allocator>
-    dynamic_buffer_adaptor(net::dynamic_vector_buffer<Elem, Allocator> real_dynamic_buffer);
+    template<typename DynamicBuffer>
+    dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer, std::enable_if_t<net::is_dynamic_buffer_v2<DynamicBuffer>::value, int *> = nullptr);
 
-    template<typename Elem, typename Traits, typename Allocator>
-    dynamic_buffer_adaptor(net::dynamic_string_buffer<Elem, Traits, Allocator> real_dynamic_buffer);
+    dynamic_buffer_adaptor(std::nullptr_t);
 
 public:
     [[nodiscard]] net::mutable_buffer data(size_t pos, size_t n);
@@ -32,37 +29,65 @@ public:
     void shrink(size_t n);
 
 private:
-    std::any holder_;
-    std::function<net::mutable_buffer(size_t, size_t)> data_;
-    std::function<net::const_buffer(size_t, size_t)> const_data_;
-    std::function<void(size_t)> grow_;
-    std::function<size_t()> size_;
-    std::function<void(size_t)> shrink_;
+    struct dispatch_data : pro::dispatch<net::mutable_buffer(size_t, size_t)>
+    {
+        template<typename DynamicBuffer>
+        net::mutable_buffer operator()(DynamicBuffer &buffer, size_t pos, size_t n)
+        {
+            return buffer.data(pos, n);
+        }
+    };
+
+    struct dispatch_const_data : pro::dispatch<net::const_buffer(size_t, size_t)>
+    {
+        template<typename DynamicBuffer>
+        net::const_buffer operator()(const DynamicBuffer &buffer, size_t pos, size_t n)
+        {
+            return buffer.data(pos, n);
+        }
+    };
+
+    struct dispatch_grow : pro::dispatch<void(size_t)>
+    {
+        template<typename DynamicBuffer>
+        void operator()(DynamicBuffer &buffer, size_t n)
+        {
+            buffer.grow(n);
+        }
+    };
+
+    struct dispatch_size : pro::dispatch<size_t()>
+    {
+        template<typename DynamicBuffer>
+        size_t operator()(DynamicBuffer &buffer)
+        {
+            return buffer.size();
+        }
+    };
+
+    struct dispatch_shrink : pro::dispatch<void(size_t)>
+    {
+        template<typename DynamicBuffer>
+        void operator()(DynamicBuffer &buffer, size_t n)
+        {
+            buffer.shrink(n);
+        }
+    };
+
+    struct facade_dynamic_buffer : pro::facade<dispatch_data, dispatch_const_data, dispatch_grow, dispatch_size, dispatch_shrink>
+    {
+        static constexpr auto minimum_copyability = pro::constraint_level::trivial;
+        static constexpr std::size_t maximum_size = sizeof(void *);
+    };
+
+    pro::proxy<facade_dynamic_buffer> dynamic_buffer_;
 };
 
-template<typename Elem, typename Allocator>
-dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_vector_buffer<Elem, Allocator> real_dynamic_buffer)
-    : holder_(std::move(real_dynamic_buffer))
-{
-    static_assert(sizeof(Elem) == 1, "Elem size == 1 is required");
-    data_ = [this](size_t pos, size_t n) { return std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->data(pos, n); };
-    const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->data(pos, n); };
-    grow_ = [this](size_t n) { std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->grow(n); };
-    size_ = [this]() { return std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->size(); };
-    shrink_ = [this](size_t n) { std::any_cast<net::dynamic_vector_buffer<Elem, Allocator>>(&holder_)->shrink(n); };
-}
+template<typename DynamicBuffer>
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer, std::enable_if_t<net::is_dynamic_buffer_v2<DynamicBuffer>::value, int *>)
+    : dynamic_buffer_(std::addressof(dynamic_buffer))
+{}
 
-template<typename Elem, typename Traits, typename Allocator>
-dynamic_buffer_adaptor::dynamic_buffer_adaptor(net::dynamic_string_buffer<Elem, Traits, Allocator> real_dynamic_buffer)
-    : holder_(std::move(real_dynamic_buffer))
-{
-    static_assert(sizeof(Elem) == 1, "Elem size == 1 is required");
-    data_ = [this](size_t pos, size_t n) { return std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->data(pos, n); };
-    const_data_ = [this](size_t pos, size_t n) { return std::any_cast<const net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->data(pos, n); };
-    grow_ = [this](size_t n) { std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->grow(n); };
-    size_ = [this]() { return std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->size(); };
-    shrink_ = [this](size_t n) { std::any_cast<net::dynamic_string_buffer<Elem, Traits, Allocator>>(&holder_)->shrink(n); };
-}
 } // namespace mrpc
 
 #endif
