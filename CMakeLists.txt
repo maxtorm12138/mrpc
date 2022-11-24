@@ -104,7 +104,7 @@ if (MRPC_BUILD_TESTS)
     mrpc_add_test(
         TARGET test_packet_handler
         FILES "test/test_packet_handler.cpp"
-        LIBRARIES mrpc GTest::gtest
+        LIBRARIES mrpc GTest::gtest_main
     )
 endif()
 
