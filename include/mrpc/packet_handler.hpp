@@ -175,7 +175,7 @@ public:
         co_return rpc_error::success;
     }
 
-    net::awaitable<sys::error_code> deliver(net::const_buffer packet)
+    net::awaitable<sys::error_code> offer(net::const_buffer packet)
     {
         sys::error_code ec;
         Container container;
@@ -186,7 +186,7 @@ public:
         co_return translate(ec);
     }
 
-    net::awaitable<sys::error_code> retain(dynamic_buffer_adaptor packet)
+    net::awaitable<sys::error_code> poll(dynamic_buffer_adaptor packet)
     {
         sys::error_code ec;
 
