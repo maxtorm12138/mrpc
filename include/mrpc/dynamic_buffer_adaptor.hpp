@@ -15,7 +15,15 @@ public:
     template<typename DynamicBuffer>
     dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer, std::enable_if_t<net::is_dynamic_buffer_v2<DynamicBuffer>::value, int *> = nullptr);
 
-    dynamic_buffer_adaptor(std::nullptr_t);
+    ~dynamic_buffer_adaptor() = default;
+
+    dynamic_buffer_adaptor(const dynamic_buffer_adaptor &) = default;
+
+    dynamic_buffer_adaptor &operator=(const dynamic_buffer_adaptor &) = default;
+
+    dynamic_buffer_adaptor(dynamic_buffer_adaptor &&) noexcept = default;
+
+    dynamic_buffer_adaptor &operator=(dynamic_buffer_adaptor &&) noexcept = default;
 
 public:
     [[nodiscard]] net::mutable_buffer data(size_t pos, size_t n);
@@ -77,7 +85,10 @@ private:
     struct facade_dynamic_buffer : pro::facade<dispatch_data, dispatch_const_data, dispatch_grow, dispatch_size, dispatch_shrink>
     {
         static constexpr auto minimum_copyability = pro::constraint_level::trivial;
-        static constexpr std::size_t maximum_size = sizeof(void *);
+        static constexpr auto minimum_relocatability = pro::constraint_level::trivial;
+        static constexpr auto minimum_destructibility = pro::constraint_level::trivial;
+        static constexpr auto maximum_size = sizeof(void *);
+        static constexpr auto maximum_alignment = alignof(void *);
     };
 
     pro::proxy<facade_dynamic_buffer> dynamic_buffer_;
