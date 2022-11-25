@@ -47,6 +47,10 @@ public:
     dynamic_buffer_adaptor &operator=(dynamic_buffer_adaptor &&) noexcept = default;
 
 public:
+    using const_buffers_type = net::const_buffer;
+
+    using mutable_buffers_type = net::mutable_buffer;
+
     [[nodiscard]] net::mutable_buffer data(size_t pos, size_t n);
 
     [[nodiscard]] net::const_buffer data(size_t pos, size_t n) const;
@@ -60,6 +64,8 @@ public:
     [[nodiscard]] size_t capacity() const;
 
     void consume(size_t n);
+
+    [[nodiscard]] size_t max_size() const;
 
 private:
     pro::proxy<detail::facade_dynamic_buffer> dynamic_buffer_;
@@ -95,6 +101,7 @@ dynamic_buffer_adaptor::dynamic_buffer_adaptor(std::basic_string<Elem, Traits, A
     : dynamic_buffer_(pro::make_proxy<detail::facade_dynamic_buffer>(net::dynamic_buffer(dynamic_buffer)))
 {}
 
+static_assert(net::is_dynamic_buffer_v2<dynamic_buffer_adaptor>::value);
 } // namespace mrpc
 
 #endif

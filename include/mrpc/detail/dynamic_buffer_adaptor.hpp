@@ -69,10 +69,20 @@ struct dispatch_dynamic_buffer_consume : pro::dispatch<void(size_t)>
     {
         buffer.consume(n);
     }
-}
+};
 
-struct facade_dynamic_buffer : pro::facade<dispatch_dynamic_buffer_data, dispatch_dynamic_buffer_data, dispatch_dynamic_buffer_const_data, dispatch_dynamic_buffer_grow,
-                                   dispatch_dynamic_buffer_size, dispatch_dynamic_buffer_shrink, dispatch_dynamic_buffer_capacity, dispatch_dynamic_buffer_consume>
+struct dispatch_dynamic_buffer_max_size : pro::dispatch<size_t()>
+{
+    template<typename DynamicBuffer>
+    size_t operator()(const DynamicBuffer &buffer)
+    {
+        return buffer.max_size();
+    }
+};
+
+struct facade_dynamic_buffer
+    : pro::facade<dispatch_dynamic_buffer_data, dispatch_dynamic_buffer_data, dispatch_dynamic_buffer_const_data, dispatch_dynamic_buffer_grow, dispatch_dynamic_buffer_size,
+          dispatch_dynamic_buffer_shrink, dispatch_dynamic_buffer_capacity, dispatch_dynamic_buffer_consume, dispatch_dynamic_buffer_max_size>
 {
     static constexpr auto minimum_copyability = pro::constraint_level::nontrivial;
     static constexpr auto minimum_relocatability = pro::constraint_level::nothrow;

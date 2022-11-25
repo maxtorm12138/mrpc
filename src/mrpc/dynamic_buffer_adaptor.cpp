@@ -45,4 +45,9 @@ void dynamic_buffer_adaptor::consume(size_t n)
     return dynamic_buffer_.invoke<detail::dispatch_dynamic_buffer_consume>(n);
 }
 
+size_t dynamic_buffer_adaptor::max_size() const
+{
+    return dynamic_buffer_.invoke<detail::dispatch_dynamic_buffer_max_size>();
+}
+
 } // namespace mrpc
