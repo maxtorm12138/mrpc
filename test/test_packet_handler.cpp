@@ -15,7 +15,7 @@ MRPC_TEST_F(packet_handler_test, channel)
 {
     mrpc::channel_packet_handler<std::vector<uint8_t>> handler(co_await net::this_coro::executor);
 
-    std::string msg = "hello from outer side";
+    std::string msg = "hello from outside";
     auto ec = co_await handler.offer(net::buffer(msg));
     EXPECT_FALSE(!!ec);
 
