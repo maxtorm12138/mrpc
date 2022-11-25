@@ -15,15 +15,17 @@ class dynamic_buffer_adaptor
 {
 public:
     template<typename DynamicBuffer>
-        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
     dynamic_buffer_adaptor(DynamicBuffer *dynamic_buffer);
 
     template<typename DynamicBuffer>
-        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
     dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer);
 
     template<typename DynamicBuffer>
-        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer>
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value &&
+                 pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer> &&
+                 (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
     dynamic_buffer_adaptor(DynamicBuffer &&dynamic_buffer);
 
     template<typename Elem, typename Allocator>
@@ -72,19 +74,20 @@ private:
 };
 
 template<typename DynamicBuffer>
-    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
 dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer *dynamic_buffer)
     : dynamic_buffer_(dynamic_buffer)
 {}
 
 template<typename DynamicBuffer>
-    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
 dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer)
     : dynamic_buffer_(std::addressof(dynamic_buffer))
 {}
 
 template<typename DynamicBuffer>
-    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer>
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer> &&
+             (!std::same_as<std::decay_t<DynamicBuffer>, dynamic_buffer_adaptor>)
 dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &&dynamic_buffer)
     : dynamic_buffer_(pro::make_proxy<detail::facade_dynamic_buffer>(std::forward<std::decay_t<DynamicBuffer>>(dynamic_buffer)))
 {}
