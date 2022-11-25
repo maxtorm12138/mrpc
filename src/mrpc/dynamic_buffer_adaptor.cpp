@@ -35,4 +35,14 @@ void dynamic_buffer_adaptor::shrink(size_t n)
     dynamic_buffer_.invoke<detail::dispatch_dynamic_buffer_shrink>(n);
 }
 
+size_t dynamic_buffer_adaptor::capacity() const
+{
+    return dynamic_buffer_.invoke<detail::dispatch_dynamic_buffer_capacity>();
+}
+
+void dynamic_buffer_adaptor::consume(size_t n)
+{
+    return dynamic_buffer_.invoke<detail::dispatch_dynamic_buffer_consume>(n);
+}
+
 } // namespace mrpc

@@ -57,6 +57,10 @@ public:
 
     void shrink(size_t n);
 
+    [[nodiscard]] size_t capacity() const;
+
+    void consume(size_t n);
+
 private:
     pro::proxy<detail::facade_dynamic_buffer> dynamic_buffer_;
 };
