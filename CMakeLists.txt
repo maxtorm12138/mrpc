@@ -76,6 +76,7 @@ if (MRPC_BUILD_TESTS)
         add_executable(${MRPC_TEST_TARGET} ${MRPC_TEST_FILES})
         target_link_libraries(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_LIBRARIES})
         target_compile_options(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:-fno-access-control>)
+        target_compile_definitions(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:MRPC_ACCESS_PRIVATE_MEMBER>)
     endmacro()
 
     CPMAddPackage(

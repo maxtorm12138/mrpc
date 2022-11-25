@@ -1,9 +1,11 @@
-#ifndef MRPC_DETAIL_DYNAMIC_BUFFER_HPP
-#define MRPC_DETAIL_DYNAMIC_BUFFER_HPP
+#ifndef MRPC_DYNAMIC_BUFFER_HPP
+#define MRPC_DYNAMIC_BUFFER_HPP
 
-#include <any>
 #include <boost/asio/buffer.hpp>
+
 #include <proxy.h>
+
+#include <mrpc/detail/dynamic_buffer_adaptor.hpp>
 
 namespace mrpc {
 namespace net = boost::asio;
@@ -13,9 +15,28 @@ class dynamic_buffer_adaptor
 {
 public:
     template<typename DynamicBuffer>
-    dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer, std::enable_if_t<net::is_dynamic_buffer_v2<DynamicBuffer>::value, int *> = nullptr);
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+    dynamic_buffer_adaptor(DynamicBuffer *dynamic_buffer);
 
-    ~dynamic_buffer_adaptor() = default;
+    template<typename DynamicBuffer>
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+    dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer);
+
+    template<typename DynamicBuffer>
+        requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer>
+    dynamic_buffer_adaptor(DynamicBuffer &&dynamic_buffer);
+
+    template<typename Elem, typename Allocator>
+        requires(sizeof(Elem) == 1) && pro::proxiable<pro::details::sbo_ptr<std::vector<Elem, Allocator>>, detail::facade_dynamic_buffer>
+    dynamic_buffer_adaptor(std::vector<Elem, Allocator> &dynamic_buffer);
+
+    template<typename Elem, typename Traits, typename Allocator>
+        requires(sizeof(Elem) == 1) && pro::proxiable<pro::details::sbo_ptr<net::dynamic_string_buffer<Elem, Traits, Allocator>>, detail::facade_dynamic_buffer>
+    dynamic_buffer_adaptor(std::basic_string<Elem, Traits, Allocator> &dynamic_buffer);
+
+    dynamic_buffer_adaptor(std::nullptr_t);
+
+    dynamic_buffer_adaptor(std::nullopt_t);
 
     dynamic_buffer_adaptor(const dynamic_buffer_adaptor &) = default;
 
@@ -37,66 +58,37 @@ public:
     void shrink(size_t n);
 
 private:
-    struct dispatch_data : pro::dispatch<net::mutable_buffer(size_t, size_t)>
-    {
-        template<typename DynamicBuffer>
-        net::mutable_buffer operator()(DynamicBuffer &buffer, size_t pos, size_t n)
-        {
-            return buffer.data(pos, n);
-        }
-    };
-
-    struct dispatch_const_data : pro::dispatch<net::const_buffer(size_t, size_t)>
-    {
-        template<typename DynamicBuffer>
-        net::const_buffer operator()(const DynamicBuffer &buffer, size_t pos, size_t n)
-        {
-            return buffer.data(pos, n);
-        }
-    };
-
-    struct dispatch_grow : pro::dispatch<void(size_t)>
-    {
-        template<typename DynamicBuffer>
-        void operator()(DynamicBuffer &buffer, size_t n)
-        {
-            buffer.grow(n);
-        }
-    };
-
-    struct dispatch_size : pro::dispatch<size_t()>
-    {
-        template<typename DynamicBuffer>
-        size_t operator()(DynamicBuffer &buffer)
-        {
-            return buffer.size();
-        }
-    };
-
-    struct dispatch_shrink : pro::dispatch<void(size_t)>
-    {
-        template<typename DynamicBuffer>
-        void operator()(DynamicBuffer &buffer, size_t n)
-        {
-            buffer.shrink(n);
-        }
-    };
-
-    struct facade_dynamic_buffer : pro::facade<dispatch_data, dispatch_const_data, dispatch_grow, dispatch_size, dispatch_shrink>
-    {
-        static constexpr auto minimum_copyability = pro::constraint_level::trivial;
-        static constexpr auto minimum_relocatability = pro::constraint_level::trivial;
-        static constexpr auto minimum_destructibility = pro::constraint_level::trivial;
-        static constexpr auto maximum_size = sizeof(void *);
-        static constexpr auto maximum_alignment = alignof(void *);
-    };
-
-    pro::proxy<facade_dynamic_buffer> dynamic_buffer_;
+    pro::proxy<detail::facade_dynamic_buffer> dynamic_buffer_;
 };
 
 template<typename DynamicBuffer>
-dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer, std::enable_if_t<net::is_dynamic_buffer_v2<DynamicBuffer>::value, int *>)
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer *dynamic_buffer)
+    : dynamic_buffer_(dynamic_buffer)
+{}
+
+template<typename DynamicBuffer>
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &dynamic_buffer)
     : dynamic_buffer_(std::addressof(dynamic_buffer))
+{}
+
+template<typename DynamicBuffer>
+    requires net::is_dynamic_buffer_v2<std::decay_t<DynamicBuffer>>::value && pro::proxiable<pro::details::sbo_ptr<std::decay_t<DynamicBuffer>>, detail::facade_dynamic_buffer>
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(DynamicBuffer &&dynamic_buffer)
+    : dynamic_buffer_(pro::make_proxy<detail::facade_dynamic_buffer>(std::forward<std::decay_t<DynamicBuffer>>(dynamic_buffer)))
+{}
+
+template<typename Elem, typename Allocator>
+    requires(sizeof(Elem) == 1) && pro::proxiable<pro::details::sbo_ptr<std::vector<Elem, Allocator>>, detail::facade_dynamic_buffer>
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(std::vector<Elem, Allocator> &dynamic_buffer)
+    : dynamic_buffer_(pro::make_proxy<detail::facade_dynamic_buffer>(net::dynamic_buffer(dynamic_buffer)))
+{}
+
+template<typename Elem, typename Traits, typename Allocator>
+    requires(sizeof(Elem) == 1) && pro::proxiable<pro::details::sbo_ptr<net::dynamic_string_buffer<Elem, Traits, Allocator>>, detail::facade_dynamic_buffer>
+dynamic_buffer_adaptor::dynamic_buffer_adaptor(std::basic_string<Elem, Traits, Allocator> &dynamic_buffer)
+    : dynamic_buffer_(pro::make_proxy<detail::facade_dynamic_buffer>(net::dynamic_buffer(dynamic_buffer)))
 {}
 
 } // namespace mrpc

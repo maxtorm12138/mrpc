@@ -15,20 +15,23 @@ MRPC_TEST_F(packet_handler_test, channel)
 {
     mrpc::channel_packet_handler<std::vector<uint8_t>> handler(co_await net::this_coro::executor);
 
-    std::string msg = "hello from other side";
-    co_await handler.offer(net::buffer(msg));
+    std::string msg = "hello from outer side";
+    auto ec = co_await handler.offer(net::buffer(msg));
+    EXPECT_FALSE(!!ec);
 
     std::string received_msg;
-    auto buffer_received_msg = net::dynamic_buffer(received_msg);
+    ec = co_await handler.receive(received_msg);
+    EXPECT_FALSE(!!ec);
 
-    co_await handler.receive(buffer_received_msg);
     EXPECT_EQ(received_msg, msg);
 
     std::string msg1 = "at least I can say that I've tried";
-    co_await handler.send(net::buffer(msg1));
+    ec = co_await handler.send(net::buffer(msg1));
+    EXPECT_FALSE(!!ec);
 
     std::string received_msg1;
-    auto buffer_received_msg1 = net::dynamic_buffer(received_msg1);
-    co_await handler.poll(buffer_received_msg1);
+    ec = co_await handler.poll(received_msg1);
+    EXPECT_FALSE(!!ec);
+
     EXPECT_EQ(received_msg1, msg1);
 }
