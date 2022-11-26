@@ -9,7 +9,7 @@
       "cmakeCommandArgs": "-DMRPC_BUILD_TESTS=1 -DCPM_SOURCE_CACHE=E:\\Code\\cpm_packages",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x64_x64" ]
+      "inheritEnvironments": [ "msvc_x64" ]
     }
   ]
 }

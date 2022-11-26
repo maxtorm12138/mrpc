@@ -13,7 +13,6 @@
 
 namespace mrpc {
 namespace net = boost::asio;
-using namespace std::placeholders;
 
 class dynamic_buffer_adaptor;
 template<typename DynamicBuffer>
