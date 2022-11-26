@@ -1,5 +1,10 @@
 #ifndef MRPC_AWAIT_ERROR_H
 #define MRPC_AWAIT_ERROR_H
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#    pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+
 #include <boost/asio/use_awaitable.hpp>
 #include <boost/asio/redirect_error.hpp>
 

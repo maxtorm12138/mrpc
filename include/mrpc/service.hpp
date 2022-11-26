@@ -1,6 +1,10 @@
 #ifndef MRPC_SERVICE_H
 #define MRPC_SERVICE_H
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#    pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+
 // std
 #include <stdexcept>
 #include <unordered_map>
@@ -32,7 +36,7 @@ service &service::implement(Implement implement)
     auto [iter, exists] = methods_.emplace(command_id, std::make_unique<abstract_method>(new method<Method, Implement>(std::move(implement))));
     if (exists)
     {
-	    throw std::runtime_error(fmt::format("{} already implemented", command_id));
+        throw std::runtime_error(fmt::format("{} already implemented", command_id));
     }
 
     return *this;

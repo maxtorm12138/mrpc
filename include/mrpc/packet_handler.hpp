@@ -1,6 +1,10 @@
 #ifndef MRPC_PACKET_HANDLER_H
 #define MRPC_PACKET_HANDLER_H
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#    pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+
 #include <boost/noncopyable.hpp>
 
 #include <boost/asio/basic_stream_socket.hpp>

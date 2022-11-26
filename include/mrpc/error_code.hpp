@@ -1,6 +1,10 @@
 #ifndef MRPC_ERROR_CODE_H
 #define MRPC_ERROR_CODE_H
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#    pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+
 #include <boost/system/error_code.hpp>
 
 namespace mrpc {

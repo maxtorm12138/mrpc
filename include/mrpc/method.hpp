@@ -1,6 +1,10 @@
 #ifndef MRPC_METHOD_H
 #define MRPC_METHOD_H
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#    pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+
 // boost
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/buffer.hpp>

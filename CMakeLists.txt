@@ -59,6 +59,7 @@ set(MRPC_SRCS
     "src/mrpc/dynamic_buffer_adaptor.cpp"
     "include/mrpc/await_error.hpp"
     "src/mrpc/await_error.cpp"
+    "include/mrpc/batch_run.hpp"
     "include/mrpc/packet_handler.hpp"
     "include/mrpc/method.hpp"
     "include/mrpc/mrpc.hpp")
@@ -67,6 +68,7 @@ add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
 target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio PRIVATE spdlog::spdlog msft_proxy)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED)
+
 add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
@@ -77,6 +79,7 @@ if (MRPC_BUILD_TESTS)
         target_link_libraries(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_LIBRARIES})
         target_compile_options(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:-fno-access-control>)
         target_compile_definitions(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:MRPC_ACCESS_PRIVATE_MEMBER>)
+
     endmacro()
 
     CPMAddPackage(
