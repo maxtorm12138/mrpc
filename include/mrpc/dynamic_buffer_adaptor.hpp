@@ -17,7 +17,7 @@ namespace net = boost::asio;
 class dynamic_buffer_adaptor;
 template<typename DynamicBuffer>
 concept is_dynamic_buffer = requires {
-                                requires net::is_dynamic_buffer<DynamicBuffer>::value;
+                                requires net::is_dynamic_buffer_v2<DynamicBuffer>::value;
                                 requires !std::same_as<DynamicBuffer, dynamic_buffer_adaptor>;
                             };
 

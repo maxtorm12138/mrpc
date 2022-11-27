@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(mrpc LANGUAGES CXX)
-include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
-
 include (CPM)
 
 CPMAddPackage(
@@ -68,19 +66,16 @@ add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
 target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio PRIVATE spdlog::spdlog msft_proxy $<$<BOOL:${WIN32}>:ws2_32>)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED)
-target_compile_options(mrpc PUBLIC $<$<AND:$<BOOL:${WIN32}>,$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">>:-stdlib=libc++>)
 
 add_library(mrpc::mrpc ALIAS mrpc)
 
 if (MRPC_BUILD_TESTS)
 
     macro(mrpc_add_test)
-        cmake_parse_arguments(MRPC_TEST "" "TARGET" "FILES;LIBRARIES" ${ARGN})
+        cmake_parse_arguments(MRPC_TEST "" "TARGET" "FILES;LIBRARIES;COMPILE_DEFINITIONS" ${ARGN})
         add_executable(${MRPC_TEST_TARGET} ${MRPC_TEST_FILES})
         target_link_libraries(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_LIBRARIES})
-        target_compile_options(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:-fno-access-control>)
-        target_compile_definitions(${MRPC_TEST_TARGET} PUBLIC $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","Clang">:MRPC_ACCESS_PRIVATE_MEMBER>)
-
+        target_compile_definitions(${MRPC_TEST_TARGET} PUBLIC ${MRPC_TEST_COMPILE_DEFINITIONS})
     endmacro()
 
     CPMAddPackage(
@@ -110,6 +105,13 @@ if (MRPC_BUILD_TESTS)
         TARGET test_packet_handler
         FILES "test/test_packet_handler.cpp"
         LIBRARIES mrpc GTest::gtest_main
+    )
+
+    mrpc_add_test(
+        TARGET test_ranged_parallel_group
+        FILES "test/test_ranged_parallel_group.cpp"
+        LIBRARIES Boost::asio
+        COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED
     )
 endif()
 

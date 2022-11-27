@@ -36,3 +36,4 @@ build
 .vs
 out/
 .ccls-cache
+compile_commands.json
