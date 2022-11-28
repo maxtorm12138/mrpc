@@ -25,6 +25,8 @@ public:
     template<is_method Method, typename Implement>
     service &implement(Implement implement);
 
+    net::awaitable<sys::error_code> invoke(const Context &context, net::const_buffer request, dynamic_buffer_adaptor response);
+
 private:
     std::unordered_map<uint8_t, std::unique_ptr<abstract_method>> methods_;
 };

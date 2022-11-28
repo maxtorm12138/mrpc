@@ -23,9 +23,9 @@ CPMAddPackage(
 
 CPMAddPackage(
     NAME Boost
-    VERSION 1.80.0
+    VERSION 1.81.0
     GITHUB_REPOSITORY boostorg/boost
-    GIT_TAG "boost-1.80.0"
+    GIT_TAG "boost-1.81.0.beta1"
 )
 
 CPMAddPackage(
@@ -57,13 +57,14 @@ set(MRPC_SRCS
     "src/mrpc/dynamic_buffer_adaptor.cpp"
     "include/mrpc/await_error.hpp"
     "src/mrpc/await_error.cpp"
-    "include/mrpc/batch_run.hpp"
+    "include/mrpc/stub.hpp"
+    "src/mrpc/stub.cpp"
     "include/mrpc/packet_handler.hpp"
     "include/mrpc/method.hpp"
     "include/mrpc/mrpc.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
-target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio PRIVATE spdlog::spdlog msft_proxy $<$<BOOL:${WIN32}>:ws2_32>)
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio spdlog::spdlog $<$<BOOL:${WIN32}>:ws2_32> Boost::uuid Boost::scope_exit)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
 target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED)
 
