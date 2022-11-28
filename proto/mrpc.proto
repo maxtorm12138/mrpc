@@ -9,13 +9,16 @@ extend google.protobuf.MessageOptions {
 
 enum MessageFlag
 {
-	START = 0;
-	REQUEST = 1;
+	REQUEST = 0;
+	RESPONSE = 1;
 	NO_REPLY = 2;
+	MESSAGE_FLAG_END = 3;
 }
 
-message Cookie
+message Context
 {
-	uint64 error_code = 1;
-	string trace = 2;
+	int32 cmd_id = 1;
+	map<int32, int32> flags = 2;
+	int32 error_code = 3;
+	string trace_id = 4;
 }
