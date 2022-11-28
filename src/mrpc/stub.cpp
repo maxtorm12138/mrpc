@@ -36,7 +36,30 @@ net::awaitable<void> stub::async_run()
 
     auto runner = net::experimental::make_parallel_group(std::move(stub_operations));
 
-    co_await runner.async_wait(net::experimental::wait_for_one(), net::use_awaitable);
+    auto [order, exceptions] = co_await runner.async_wait(net::experimental::wait_for_one(), net::use_awaitable);
+
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
+    std::stringstream exception_string;
+    exception_string << fmt::format("{} async_run result:\n", boost::uuids::to_string(id_));
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        try
+        {
+            if (exceptions[i] != nullptr)
+            {
+                std::rethrow_exception(exceptions[i]);
+            }
+
+            exception_string << fmt::format("\t{}:{} [no exception]\n", boost::uuids::to_string(id_), order[i])
+        }
+        catch (const std::exception &ex)
+        {
+            exception_string << fmt::format("\t{}:{} [{}]\n", boost::uuids::to_string(id_), order[i], ex.what());
+        }
+    }
+
+    SPDLOG_DEBUG("{}", std::move(exception_string).str());
+#endif
 }
 
 net::awaitable<void> stub::launch(size_t launch_id)
