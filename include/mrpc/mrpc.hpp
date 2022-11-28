@@ -10,6 +10,6 @@
 #include <mrpc/await_error.hpp>
 #include <mrpc/dynamic_buffer_adaptor.hpp>
 #include <mrpc/packet_handler.hpp>
-#include <mrpc/batch_run.hpp>
+#include <mrpc/stub.hpp>
 #include <mrpc.pb.h>
 #endif
