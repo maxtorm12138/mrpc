@@ -23,9 +23,9 @@ CPMAddPackage(
 
 CPMAddPackage(
     NAME Boost
-    VERSION 1.81.0
+    VERSION 1.80.0
     GITHUB_REPOSITORY boostorg/boost
-    GIT_TAG "boost-1.81.0.beta1"
+    GIT_TAG "boost-1.80.0"
 )
 
 CPMAddPackage(
