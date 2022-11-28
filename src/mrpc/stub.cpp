@@ -1,6 +1,7 @@
 #include <mrpc/stub.hpp>
 
 #include <numeric>
+#include <bitset>
 
 #include <boost/asio/deferred.hpp>
 #include <boost/asio/co_spawn.hpp>
@@ -50,7 +51,7 @@ net::awaitable<void> stub::async_run()
                 std::rethrow_exception(exceptions[i]);
             }
 
-            exception_string << fmt::format("\t{}:{} [no exception]\n", boost::uuids::to_string(id_), order[i])
+            exception_string << fmt::format("\t{}:{} [no exception]\n", boost::uuids::to_string(id_), order[i]);
         }
         catch (const std::exception &ex)
         {

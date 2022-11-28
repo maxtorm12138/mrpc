@@ -60,6 +60,8 @@ set(MRPC_SRCS
     "src/mrpc/await_error.cpp"
     "include/mrpc/stub.hpp"
     "src/mrpc/stub.cpp"
+    "include/mrpc/service.hpp"
+    "src/mrpc/service.cpp"
     "include/mrpc/packet_handler.hpp"
     "include/mrpc/method.hpp"
     "include/mrpc/mrpc.hpp")
@@ -112,8 +114,15 @@ if (MRPC_BUILD_TESTS)
     mrpc_add_test(
         TARGET test_ranged_parallel_group
         FILES "test/test_ranged_parallel_group.cpp"
-        LIBRARIES Boost::asio
-        COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED
+        LIBRARIES Boost::asio spdlog::spdlog
+        COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED SPDLOG_ACTIVE_LEVEL=0
+    )
+
+    mrpc_add_test(
+        TARGET test_timer_reset
+        FILES "test/test_timer_reset.cpp"
+        LIBRARIES Boost::asio spdlog::spdlog GTest::gtest_main
+        COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED SPDLOG_ACTIVE_LEVEL=0
     )
 endif()
 
