@@ -124,5 +124,12 @@ if (MRPC_BUILD_TESTS)
         LIBRARIES Boost::asio spdlog::spdlog GTest::gtest_main
         COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED SPDLOG_ACTIVE_LEVEL=0
     )
+
+    mrpc_add_test(
+        TARGET test_service
+        FILES "test/test_service.cpp"
+        LIBRARIES mrpc GTest::gtest_main
+        COMPILE_DEFINITIONS  $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DEPRECATED MRPC_LOG_LEVEL=0
+    )
 endif()
 
