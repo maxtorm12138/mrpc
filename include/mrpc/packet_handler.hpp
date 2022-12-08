@@ -18,6 +18,10 @@
 #include <mrpc/error_code.hpp>
 #include <mrpc/await_error.hpp>
 
+#if defined MRPC_ENABLE_CRYPTO
+#    include <botan/tls_server.h>
+#endif
+
 namespace mrpc {
 
 namespace net = boost::asio;
@@ -212,6 +216,10 @@ private:
     Channel in_;
     Channel out_;
 };
+
+#ifdef MRPC_ENABLE_CRYPTO
+
+#endif
 
 } // namespace mrpc
 

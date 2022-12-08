@@ -36,7 +36,12 @@ CPMAddPackage(
     OPTIONS "protobuf_INSTALL OFF" "Protobuf_USE_STATIC_LIBS ON"
 )
 
+set(MRPC_ENABLE_CRYPTO OFF CACHE BOOL "")
 set(MRPC_LOG_LEVEL "3" CACHE STRING "MRPC LOG LEVEL")
+
+if (${MRPC_ENABLE_CRYPTO}) 
+    find_package(Botan2 REQUIRED 2.19.3)
+endif()
 
 include (GenerateProto)
 
@@ -67,9 +72,9 @@ set(MRPC_SRCS
     "include/mrpc/mrpc.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
-target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio spdlog::spdlog $<$<BOOL:${WIN32}>:ws2_32> Boost::uuid Boost::scope_exit)
+target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio spdlog::spdlog $<$<BOOL:${WIN32}>:ws2_32> Boost::uuid Boost::scope_exit $<$<BOOL:${MRPC_ENABLE_CRYPTO}>:Botan2::Botan2>)
 target_include_directories(mrpc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/proto include/)
-target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED PRIVATE SPDLOG_ACTIVE_LEVEL=${MRPC_LOG_LEVEL})
+target_compile_definitions(mrpc PUBLIC $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00> BOOST_ASIO_NO_DYNAMIC_BUFFER_V1 BOOST_ASIO_NO_DEPRECATED PRIVATE SPDLOG_ACTIVE_LEVEL=${MRPC_LOG_LEVEL} $<$<BOOL:${MRPC_ENABLE_CRYPTO}>:MRPC_ENABLE_CRYPTO>)
 
 add_library(mrpc::mrpc ALIAS mrpc)
 
