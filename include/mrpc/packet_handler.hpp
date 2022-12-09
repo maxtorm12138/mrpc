@@ -18,8 +18,9 @@
 #include <mrpc/error_code.hpp>
 #include <mrpc/await_error.hpp>
 
-#if defined MRPC_ENABLE_CRYPTO
-#    include <botan/tls_server.h>
+#if defined MRPC_ENABLE_SSL
+#    include <botan/tls_version.h>
+#    include <botan/tls_client.h>
 #endif
 
 namespace mrpc {
@@ -33,25 +34,7 @@ public:
     virtual ~abstract_packet_handler() = default;
 
 protected:
-    static sys::error_code translate(sys::error_code ec)
-    {
-        if (ec == net::error::operation_aborted || ec == net::experimental::error::channel_cancelled)
-        {
-            return rpc_error::operation_canceled;
-        }
-
-        if (ec == net::error::eof || ec == net::error::broken_pipe || ec == net::error::connection_reset || ec == net::experimental::error::channel_closed)
-        {
-            return rpc_error::connection_closed;
-        }
-
-        if (ec)
-        {
-            return ec;
-        }
-
-        return rpc_error::success;
-    }
+    sys::error_code translate(sys::error_code ec);
 
 public:
     virtual net::awaitable<sys::error_code> send(net::const_buffer packet) noexcept = 0;
@@ -217,7 +200,7 @@ private:
     Channel out_;
 };
 
-#ifdef MRPC_ENABLE_CRYPTO
+#ifdef MRPC_ENABLE_SSL
 
 #endif
 
