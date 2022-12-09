@@ -17,6 +17,7 @@
 #include <mrpc/dynamic_buffer_adaptor.hpp>
 #include <mrpc/error_code.hpp>
 #include <mrpc/await_error.hpp>
+#include <boost/asio/recycling_allocator.hpp>
 
 #if defined MRPC_ENABLE_SSL
 #    include <botan/tls_version.h>
@@ -42,95 +43,60 @@ public:
     virtual net::awaitable<sys::error_code> receive(dynamic_buffer_adaptor packet) noexcept = 0;
 };
 
-template<typename Protocol, typename Executor>
+template<typename AsyncStream>
+concept is_async_stream = requires(AsyncStream stream_) {
+                              requires std::is_nothrow_move_constructible_v<AsyncStream>;
+                              requires std::is_nothrow_move_assignable_v<AsyncStream>;
+                              requires net::is_executor<std::invoke_result_t<typename AsyncStream::get_executor>>::value;
+                          };
+
+template<is_async_stream AsyncStream>
 class stream_packet_handler final : public abstract_packet_handler
 {
 public:
-    stream_packet_handler(net::basic_stream_socket<Protocol, Executor> socket)
-        : socket_(std::move(socket))
+    stream_packet_handler(AsyncStream stream)
+        : stream_(std::move(stream))
     {}
 
 public:
-    net::awaitable<sys::error_code> send(net::const_buffer packet) noexcept override
-    {
-        sys::error_code ec;
+    net::awaitable<sys::error_code> send(net::const_buffer packet) noexcept override;
 
-        uint16_t size = packet.size();
-        std::array<net::const_buffer, 2> buffers{net::buffer(&size, sizeof(size)), packet};
-        co_await net::async_write(socket_, buffers, await_error(ec));
-        co_return translate(ec);
-    }
-
-    net::awaitable<sys::error_code> receive(dynamic_buffer_adaptor packet) noexcept override
-    {
-        sys::error_code ec;
-
-        uint16_t size = 0;
-        co_await net::async_read(socket_, net::buffer(&size, sizeof(size)), await_error(ec));
-        if (ec)
-        {
-            co_return translate(ec);
-        }
-
-        auto pos = packet.size();
-        packet.grow(size);
-
-        co_await net::async_read(socket_, packet.data(pos, size), await_error(ec));
-        if (ec)
-        {
-            co_return translate(ec);
-        }
-
-        co_return rpc_error::success;
-    }
+    net::awaitable<sys::error_code> receive(dynamic_buffer_adaptor packet) noexcept override;
 
 private:
-    net::basic_stream_socket<Protocol, Executor> socket_;
+    AsyncStream stream_;
 };
 
-template<typename Protocol, typename Executor>
+template<typename AsyncDatagram>
+concept is_async_datagram = requires(AsyncDatagram datagram_) {
+                                requires std::is_nothrow_move_constructible_v<AsyncDatagram>;
+                                requires std::is_nothrow_move_assignable_v<AsyncDatagram>;
+                                requires net::is_executor<std::invoke_result_t<typename AsyncDatagram::get_executor>>::value;
+                            };
+
+template<is_async_datagram AsyncDatagram>
 class datagram_packet_handler : public abstract_packet_handler
 {
 public:
-    datagram_packet_handler(net::basic_datagram_socket<Protocol, Executor> socket)
-        : socket_(std::move(socket))
+    datagram_packet_handler(AsyncDatagram datagram)
+        : datagram_(std::move(datagram))
     {}
 
 public:
-    net::awaitable<sys::error_code> send(net::const_buffer packet) noexcept override
-    {
-        sys::error_code ec;
-        socket_.async_send(packet, await_error(ec));
-        co_return translate(ec);
-    }
+    net::awaitable<sys::error_code> send(net::const_buffer packet) noexcept override;
 
-    net::awaitable<sys::error_code> receive(dynamic_buffer_adaptor packet) noexcept override
-    {
-        sys::error_code ec;
-
-        auto pos = packet.size();
-        packet.grow(1500);
-        auto buffer = packet.data(pos, 1500);
-        size_t size = co_await socket_.async_receive(buffer, await_error(ec));
-        if (ec)
-        {
-            co_return translate(ec);
-        }
-        packet.shrink(pos + size);
-
-        co_return rpc_error::success;
-    };
+    net::awaitable<sys::error_code> receive(dynamic_buffer_adaptor packet) noexcept override;
 
 private:
-    net::basic_datagram_socket<Protocol, Executor> socket_;
+    AsyncDatagram datagram_;
 };
 
-template<typename Container, typename Channel = net::experimental::channel<void(sys::error_code, Container)>>
 class channel_packet_handler : public abstract_packet_handler
 {
+
 public:
     template<typename Executor>
-    channel_packet_handler(Executor &&executor, size_t buffer = 100)
+    channel_packet_handler(const Executor &executor, size_t buffer = 100)
         : in_(std::forward<Executor>(executor), buffer)
         , out_(std::forward<Executor>(executor), buffer)
     {}
@@ -139,7 +105,7 @@ public:
     {
         sys::error_code ec;
 
-        Container container;
+        container_type container;
         container.resize(packet.size());
 
         net::buffer_copy(net::buffer(container), packet);
@@ -152,7 +118,7 @@ public:
     {
         sys::error_code ec;
 
-        Container container = co_await in_.async_receive(await_error(ec));
+        container_type container = co_await in_.async_receive(await_error(ec));
         if (ec)
         {
             co_return translate(ec);
@@ -169,7 +135,7 @@ public:
     net::awaitable<sys::error_code> offer(net::const_buffer packet)
     {
         sys::error_code ec;
-        Container container;
+        container_type container;
         container.resize(packet.size());
 
         net::buffer_copy(net::buffer(container), packet);
@@ -181,7 +147,7 @@ public:
     {
         sys::error_code ec;
 
-        Container container = co_await out_.async_receive(await_error(ec));
+        container_type container = co_await out_.async_receive(await_error(ec));
         if (ec)
         {
             co_return translate(ec);
@@ -196,8 +162,12 @@ public:
     }
 
 private:
-    Channel in_;
-    Channel out_;
+    using container_type = std::vector<uint8_t, net::recycling_allocator<uint8_t>>;
+
+    using channel_type = net::experimental::channel<void(sys::error_code, container_type)>;
+
+    channel_type in_;
+    channel_type out_;
 };
 
 #ifdef MRPC_ENABLE_SSL
@@ -205,5 +175,7 @@ private:
 #endif
 
 } // namespace mrpc
+
+#include <mrpc/impl/packet_handler.hpp>
 
 #endif
