@@ -190,6 +190,50 @@ net::awaitable<std::tuple<mrpc::Context, net::const_buffer>> stub::unpack(net::c
     co_return std::make_tuple(context, buffer);
 }
 
+net::awaitable<void> stub::pack(const mrpc::Context &context, const google::protobuf::Message &message, dynamic_buffer_adaptor buffer)
+{
+    uint8_t cmd_id = context.cmd_id();
+    uint32_t flags = 0;
+    uint32_t error_code = context.error_code();
+    std::string trace_id = context.trace_id();
+
+    std::bitset<32> bit_flags{};
+    for (int i = 0; i < MessageFlag::MESSAGE_FLAG_END; i++)
+    {
+        if (auto it_flag = context.flags().find(i); it_flag != context.flags().end() && it_flag->second == 1)
+        {
+            bit_flags.set(i, true);
+        }
+        else
+        {
+            bit_flags.set(i, false);
+        }
+    }
+
+    flags = bit_flags.to_ulong();
+
+    auto pos = buffer.size();
+
+    // clang-format off
+    std::array<net::const_buffer,4> template_buffer {
+        net::buffer(&cmd_id, sizeof(cmd_id)),
+        net::buffer(&flags, sizeof(flags)),
+        net::buffer(&error_code, sizeof(error_code)),
+        net::buffer(trace_id, 16)
+    };
+    // clang-format on
+
+    uint64_t size_to_grow =
+        std::accumulate(template_buffer.begin(), template_buffer.end(), message.ByteSizeLong(), [](size_t curr, net::const_buffer buffer) { return curr + buffer.size(); });
+    buffer.grow(size_to_grow);
+
+    auto pos1 = net::buffer_copy(buffer.data(pos, size_to_grow), template_buffer);
+    auto message_space = buffer.data(pos1, message.ByteSizeLong());
+
+    message.SerializeToArray(message_space.data(), message_space.size());
+    co_return;
+}
+
 net::awaitable<void> stub::pack(const mrpc::Context &context, net::const_buffer message, dynamic_buffer_adaptor buffer)
 {
     uint8_t cmd_id = context.cmd_id();
@@ -215,20 +259,57 @@ net::awaitable<void> stub::pack(const mrpc::Context &context, net::const_buffer 
     auto pos = buffer.size();
 
     // clang-format off
-    container_type<net::const_buffer> template_buffer {
+    std::array<net::const_buffer, 5> template_buffer {
         net::buffer(&cmd_id, sizeof(cmd_id)),
         net::buffer(&flags, sizeof(flags)),
         net::buffer(&error_code, sizeof(error_code)),
-        net::buffer(trace_id, 16), message
+        net::buffer(trace_id, 16),
+        message
     };
     // clang-format on
 
     uint64_t size_to_grow = std::accumulate(template_buffer.begin(), template_buffer.end(), 0ULL, [](size_t curr, net::const_buffer buffer) { return curr + buffer.size(); });
     buffer.grow(size_to_grow);
-
     net::buffer_copy(buffer.data(pos, size_to_grow), template_buffer);
 
     co_return;
+}
+
+net::awaitable<sys::error_code> stub::async_call(Context &context, const google::protobuf::Message &request, google::protobuf::Message &response)
+{
+    auto state = co_await net::this_coro::cancellation_state;
+
+    container_type<uint8_t> payload;
+    co_await pack(context, request, payload);
+
+    auto [iter, _] = call_.emplace(context.trace_id(), channel_type(co_await net::this_coro::executor, 1));
+    BOOST_SCOPE_EXIT_ALL(&)
+    {
+        call_.erase(context.trace_id());
+    };
+
+    sys::error_code ec;
+    co_await out_.async_send({}, std::move(payload), await_error(ec));
+    if (ec)
+    {
+        co_return ec;
+    }
+
+    payload = co_await iter->second->async_receive(await_error(ec));
+    if (ec)
+    {
+        co_return ec;
+    }
+
+    net::const_buffer message_space;
+    std::tie(context, message_space) = co_await unpack(net::buffer(payload));
+
+    if (!response.ParseFromArray(message_space.data(), message_space.size()))
+    {
+        co_return rpc_error::proto_parse_fail;
+    }
+
+    co_return static_cast<rpc_error>(context.error_code());
 }
 
 } // namespace mrpc

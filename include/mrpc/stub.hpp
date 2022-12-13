@@ -41,6 +41,9 @@ public:
 
     net::awaitable<void> async_run();
 
+    template<is_method Method>
+    net::awaitable<typename Method::Response> async_call(const typename Method::Request &request);
+
 private:
     net::awaitable<void> launch(size_t launch_id);
 
@@ -52,7 +55,10 @@ private:
 
     net::awaitable<std::tuple<mrpc::Context, net::const_buffer>> unpack(net::const_buffer buffer);
 
+    net::awaitable<void> pack(const mrpc::Context &context, const google::protobuf::Message &message, dynamic_buffer_adaptor buffer);
     net::awaitable<void> pack(const mrpc::Context &context, net::const_buffer message, dynamic_buffer_adaptor buffer);
+
+    net::awaitable<sys::error_code> async_call(Context &context, const google::protobuf::Message &request, google::protobuf::Message &response);
 
 private:
     options option_;
@@ -62,7 +68,9 @@ private:
     channel_type in_;
     channel_type worker_;
     channel_type out_;
-    std::unordered_map<std::string, std::optional<channel_type>> call_;
+    std::unordered_map<std::string, std::optional<channel_type>, std::hash<std::string>, std::equal_to<std::string>,
+        net::recycling_allocator<std::pair<const std::string, std::optional<channel_type>>>>
+        call_;
 };
 
 template<typename Executor, typename PacketHandler>
@@ -77,5 +85,20 @@ stub::stub(const Executor &executor, PacketHandler packet_handler, const options
     , out_(executor, option_.packet_buffer)
 {}
 
+template<is_method Method>
+net::awaitable<typename Method::Response> stub::async_call(const typename Method::Request &request)
+{
+    auto trace_id = boost::uuids::random_generator()();
+
+    Context context;
+    context.set_cmd_id(Method::descriptor()->options().GetExtension(mrpc::cmd_id));
+    context.mutable_flags()->emplace(MessageFlag::REQUEST, 1);
+    context.mutable_flags()->emplace(MessageFlag::NO_REPLY, Method::descriptor()->options().GetExtension(mrpc::no_reply));
+    context.set_trace_id(std::string(trace_id.begin(), trace_id.end()));
+
+    typename Method::Response response;
+    auto ec = co_await async_call(context, request, response);
+    co_return response;
+}
 } // namespace mrpc
 #endif
