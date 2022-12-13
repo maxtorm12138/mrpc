@@ -5,6 +5,9 @@
 #    pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
+#include <boost/asio/read.hpp>
+#include <boost/asio/write.hpp>
+
 #include <mrpc/packet_handler.hpp>
 
 namespace mrpc {
@@ -67,6 +70,7 @@ net::awaitable<sys::error_code> datagram_packet_handler<AsyncDatagram>::receive(
 
     co_return rpc_error::success;
 };
+
 } // namespace mrpc
 
 #endif
