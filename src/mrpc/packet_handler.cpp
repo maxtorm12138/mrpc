@@ -16,7 +16,7 @@ sys::error_code abstract_packet_handler::translate(sys::error_code ec)
 
     if (ec)
     {
-        return ec;
+        return rpc_error::unhandled_system_error;
     }
 
     return rpc_error::success;

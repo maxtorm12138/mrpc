@@ -8,7 +8,6 @@
 // std
 #include <stdexcept>
 #include <unordered_map>
-#include <format>
 
 // mrpc
 #include <mrpc/method.hpp>

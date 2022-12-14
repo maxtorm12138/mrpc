@@ -63,14 +63,8 @@ set(MRPC_SRCS
     "src/mrpc/dynamic_buffer_adaptor.cpp"
     "include/mrpc/await_error.hpp"
     "src/mrpc/await_error.cpp"
-    "include/mrpc/stub.hpp"
-    "src/mrpc/stub.cpp"
-    "include/mrpc/service.hpp"
-    "src/mrpc/service.cpp"
     "include/mrpc/packet_handler.hpp"
-    "src/mrpc/packet_handler.cpp"
-    "include/mrpc/method.hpp"
-    "include/mrpc/mrpc.hpp")
+    "include/mrpc/stream_packet_handler.hpp")
 
 add_library(mrpc STATIC ${MRPC_SRCS} ${MRPC_RPC_PROTO_SRCS})
 target_link_libraries(mrpc PUBLIC protobuf::libprotobuf msft_proxy Boost::system Boost::asio spdlog::spdlog $<$<BOOL:${WIN32}>:ws2_32> Boost::uuid Boost::scope_exit $<$<BOOL:${MRPC_ENABLE_SSL}>:Botan2::Botan2>)
