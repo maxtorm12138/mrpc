@@ -40,7 +40,6 @@ private:
 template<typename AsyncReadWriteStream>
 void stream_packet_handler<AsyncReadWriteStream>::initiate_send(net::const_buffer packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept
 {
-    sys::error_code ec;
     uint16_t size = packet.size();
     std::array<net::const_buffer, 2> buffers{net::buffer(&size, sizeof(size)), packet};
     net::async_write(stream_, buffers, net::deferred([](sys::error_code ec, size_t nwrite) { return net::deferred.values(translate(ec)); }))(std::move(handler));
