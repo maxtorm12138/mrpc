@@ -69,9 +69,6 @@ void stream_packet_handler<AsyncReadWriteStream>::initiate_receive(dynamic_buffe
                     goal += body_size;
                     state = 2;
                 }
-                break;
-            case 2:
-                break;
             }
 
             return goal - n;
