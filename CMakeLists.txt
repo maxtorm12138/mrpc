@@ -25,14 +25,14 @@ CPMAddPackage(
     NAME Boost
     VERSION 1.81.0
     GITHUB_REPOSITORY boostorg/boost
-    GIT_TAG "boost-1.81.0.beta1"
+    GIT_TAG "boost-1.81.0"
 )
 
 CPMAddPackage(
     NAME protobuf
     VERSION 21.9
     GITHUB_REPOSITORY protocolbuffers/protobuf
-    GIT_TAG "v21.9"
+    GIT_TAG "v3.21.12"
     OPTIONS "protobuf_INSTALL OFF" "Protobuf_USE_STATIC_LIBS ON"
 )
 

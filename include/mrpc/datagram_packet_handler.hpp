@@ -28,7 +28,8 @@ private:
 
 template<typename AsyncDatagram>
 void datagram_packet_handler<AsyncDatagram>::initiate_send(net::const_buffer packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept
-{}
+{
+}
 
 template<typename AsyncDatagram>
 void datagram_packet_handler<AsyncDatagram>::initiate_receive(dynamic_buffer_adaptor packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept

@@ -21,11 +21,11 @@ class abstract_packet_handler : public boost::noncopyable
 public:
     virtual ~abstract_packet_handler() = default;
 
-    template<typename CompletionToken>
-    auto send(net::const_buffer packet, CompletionToken &&token);
+    template<net::completion_token_for<void(sys::error_code)> CompletionToken>
+    auto async_send(net::const_buffer packet, CompletionToken &&token);
 
-    template<typename CompletionToken>
-    auto receive(dynamic_buffer_adaptor packet, CompletionToken &&token);
+    template<net::completion_token_for<void(sys::error_code)> CompletionToken>
+    auto async_receive(dynamic_buffer_adaptor packet, CompletionToken &&token);
 
 protected:
     virtual void initiate_send(net::const_buffer packet, net::any_completion_handler<void(sys::error_code)>) noexcept = 0;
@@ -33,8 +33,8 @@ protected:
     virtual void initiate_receive(dynamic_buffer_adaptor packet, net::any_completion_handler<void(sys::error_code)>) noexcept = 0;
 };
 
-template<typename CompletionToken>
-auto abstract_packet_handler::send(net::const_buffer packet, CompletionToken &&token)
+template<net::completion_token_for<void(sys::error_code)> CompletionToken>
+auto abstract_packet_handler::async_send(net::const_buffer packet, CompletionToken &&token)
 {
     auto initiation = [](net::completion_handler_for<void(sys::error_code)> auto completion_handler, abstract_packet_handler *self, net::const_buffer packet) {
         self->initiate_send(packet, std::move(completion_handler));
@@ -43,8 +43,8 @@ auto abstract_packet_handler::send(net::const_buffer packet, CompletionToken &&t
     return net::async_initiate<CompletionToken, void(sys::error_code)>(initiation, token, this, packet);
 }
 
-template<typename CompletionToken>
-auto abstract_packet_handler::receive(dynamic_buffer_adaptor packet, CompletionToken &&token)
+template<net::completion_token_for<void(sys::error_code)> CompletionToken>
+auto abstract_packet_handler::async_receive(dynamic_buffer_adaptor packet, CompletionToken &&token)
 {
     auto initiation = [](net::completion_handler_for<void(sys::error_code)> auto completion_handler, abstract_packet_handler *self, dynamic_buffer_adaptor packet) {
         self->initiate_receive(packet, std::move(completion_handler));

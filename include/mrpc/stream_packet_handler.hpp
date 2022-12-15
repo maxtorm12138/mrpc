@@ -6,20 +6,125 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include <mrpc/packet_handler.hpp>
-
-#include <boost/asio/deferred.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/write.hpp>
-#include <boost/asio/recycling_allocator.hpp>
+
+namespace mrpc::detail {
+template<typename AsyncReadWriteStream>
+class async_send_op
+{
+public:
+    async_send_op(AsyncReadWriteStream &stream, net::const_buffer packet, net::any_completion_handler<void(sys::error_code)> handler)
+        : state_(op_state::head)
+        , stream_(stream)
+        , packet_(packet)
+        , handler_(std::move(handler))
+        , size_(std::allocate_shared<uint16_t>(net::recycling_allocator<uint16_t>(), static_cast<uint16_t>(packet.size())))
+    {
+        (*this)({}, 0);
+    }
+
+    void operator()(sys::error_code ec, size_t)
+    {
+        switch (state_)
+        {
+        case op_state::head:
+            state_ = op_state::body;
+            net::async_write(stream_, net::buffer(size_.get(), sizeof(*size_)), std::move(*this));
+            break;
+        case op_state::body:
+            if (ec)
+            {
+                std::move(handler_)(ec);
+            }
+            else
+            {
+                state_ = op_state::done;
+                net::async_write(stream_, packet_, std::move(*this));
+            }
+            break;
+        case op_state::done:
+            std::move(handler_)(ec);
+            break;
+        }
+    }
+
+private:
+    enum class op_state
+    {
+        head,
+        body,
+        done
+    };
+    op_state state_;
+    AsyncReadWriteStream &stream_;
+    net::const_buffer packet_;
+    net::any_completion_handler<void(sys::error_code)> handler_;
+    std::shared_ptr<uint16_t> size_;
+};
+
+template<typename AsyncReadWriteStream>
+class async_receive_op
+{
+public:
+    async_receive_op(AsyncReadWriteStream &stream, dynamic_buffer_adaptor packet, net::any_completion_handler<void(sys::error_code)> handler)
+        : state_(op_state::head)
+        , stream_(stream)
+        , packet_(packet)
+        , handler_(std::move(handler))
+        , size_(std::allocate_shared<uint16_t>(net::recycling_allocator<uint16_t>(), 0))
+    {
+        (*this)({}, 0);
+    }
+
+    void operator()(sys::error_code ec, size_t)
+    {
+        switch (state_)
+        {
+        case op_state::head:
+            state_ = op_state::body;
+            net::async_read(stream_, net::buffer(size_.get(), sizeof(*size_)), std::move(*this));
+            break;
+        case op_state::body:
+            if (ec)
+            {
+                std::move(handler_)(ec);
+            }
+            else
+            {
+                state_ = op_state::done;
+                net::async_read(stream_, packet_, net::transfer_exactly(*size_), std::move(*this));
+            }
+            break;
+        case op_state::done:
+            std::move(handler_)(ec);
+            break;
+        }
+    }
+
+private:
+    enum class op_state
+    {
+        head,
+        body,
+        done
+    };
+    op_state state_ = op_state::head;
+    AsyncReadWriteStream &stream_;
+    dynamic_buffer_adaptor packet_;
+    net::any_completion_handler<void(sys::error_code)> handler_;
+    std::shared_ptr<uint16_t> size_;
+};
+} // namespace mrpc::detail
 
 namespace mrpc {
-
 template<typename AsyncReadWriteStream>
 class stream_packet_handler final : public abstract_packet_handler
 {
 public:
     stream_packet_handler(AsyncReadWriteStream stream)
         : stream_(std::move(stream))
+        , strand_(stream.get_executor())
     {}
 
 protected:
@@ -28,70 +133,40 @@ protected:
     void initiate_receive(dynamic_buffer_adaptor packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept override;
 
 private:
-    static sys::error_code translate(sys::error_code ec)
+    constexpr static sys::error_code translate(sys::error_code ec)
     {
-        return ec;
+        if (ec == net::error::operation_aborted)
+        {
+            return rpc_error::operation_canceled;
+        }
+
+        if (ec == net::error::eof || ec == net::error::broken_pipe || ec == net::error::connection_reset)
+        {
+            return rpc_error::connection_closed;
+        }
+
+        if (ec)
+        {
+            return rpc_error::unhandled_system_error;
+        }
+
+        return rpc_error::success;
     }
 
     AsyncReadWriteStream stream_;
-    std::vector<uint8_t, net::recycling_allocator<uint8_t>> stream_read_buffer_;
+    net::strand<typename AsyncReadWriteStream::executor_type> strand_;
 };
 
 template<typename AsyncReadWriteStream>
 void stream_packet_handler<AsyncReadWriteStream>::initiate_send(net::const_buffer packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept
 {
-    uint16_t size = packet.size();
-    std::array<net::const_buffer, 2> buffers{net::buffer(&size, sizeof(size)), packet};
-    net::async_write(stream_, buffers, net::deferred([](sys::error_code ec, size_t nwrite) { return net::deferred.values(translate(ec)); }))(std::move(handler));
+    detail::async_send_op<AsyncReadWriteStream>(stream_, packet, std::move(handler));
 }
 
 template<typename AsyncReadWriteStream>
 void stream_packet_handler<AsyncReadWriteStream>::initiate_receive(dynamic_buffer_adaptor packet, net::any_completion_handler<void(sys::error_code)> handler) noexcept
 {
-    stream_read_buffer_.clear();
-    struct read_completion_condition
-    {
-        size_t operator()(sys::error_code ec, size_t n)
-        {
-            if (ec)
-            {
-                return 0;
-            }
-
-            switch (state)
-            {
-            case 1:
-                if (goal - n == 0)
-                {
-                    uint16_t body_size = 0;
-                    net::buffer_copy(net::buffer(&body_size, sizeof(body_size)), net::buffer(self->stream_read_buffer_, sizeof(body_size)));
-                    goal += body_size;
-                    state = 2;
-                }
-            }
-
-            return goal - n;
-        }
-
-        stream_packet_handler<AsyncReadWriteStream> *self;
-        size_t goal = sizeof(uint16_t);
-        int state = 1;
-    };
-
-    net::async_read(stream_, net::dynamic_buffer(stream_read_buffer_), read_completion_condition{.self = this}, net::deferred([this, packet](sys::error_code ec, size_t n) mutable {
-        if (ec)
-        {
-            return net::deferred.values(translate(ec));
-        }
-
-        auto pos = packet.size();
-        size_t packet_size = stream_read_buffer_.size() - sizeof(uint16_t);
-        packet.grow(packet_size);
-        net::buffer_copy(packet.data(pos, packet_size), net::buffer(stream_read_buffer_.data() + sizeof(uint16_t), packet_size));
-        stream_read_buffer_.clear();
-
-        return net::deferred.values(mrpc::make_error_code(rpc_error::success));
-    }))(std::move(handler));
+    detail::async_receive_op<AsyncReadWriteStream>(stream_, packet, std::move(handler));
 }
 
 } // namespace mrpc

@@ -25,10 +25,10 @@ MRPC_TEST_F(packet_handler_test, tcp)
             mrpc::stream_packet_handler packet_handler(std::move(socket));
 
             std::string buffer = "hello from client";
-            co_await packet_handler.send(net::buffer(buffer), net::use_awaitable);
+            co_await packet_handler.async_send(net::buffer(buffer), net::use_awaitable);
             buffer.clear();
 
-            co_await packet_handler.receive(buffer, net::use_awaitable);
+            co_await packet_handler.async_receive(buffer, net::use_awaitable);
             EXPECT_EQ(buffer, "server reply: hello from client");
         }
         catch (std::exception &ex)
@@ -50,67 +50,11 @@ MRPC_TEST_F(packet_handler_test, tcp)
                     mrpc::stream_packet_handler packet_handler(std::move(socket));
 
                     std::string buffer;
-                    co_await packet_handler.receive(buffer, net::use_awaitable);
+                    co_await packet_handler.async_receive(buffer, net::use_awaitable);
                     EXPECT_EQ(buffer, "hello from client");
 
                     buffer = "server reply: " + buffer;
-                    co_await packet_handler.send(net::buffer(buffer), net::use_awaitable);
-                }(),
-                net::detached);
-        }
-        catch (std::exception &ex)
-        {
-            EXPECT_NO_THROW(throw ex);
-        }
-    };
-
-    co_await net::co_spawn(executor, server(), net::use_awaitable);
-    co_await net::co_spawn(executor, client(), net::use_awaitable);
-}
-
-MRPC_TEST_F(packet_handler_test, unix_domain)
-{
-    auto executor = co_await net::this_coro::executor;
-
-    auto client = []() -> net::awaitable<void> {
-        try
-        {
-            net::local::stream_protocol::socket socket(co_await net::this_coro::executor);
-            co_await socket.async_connect(net::local::stream_protocol::endpoint{"test.sock"}, net::use_awaitable);
-
-            mrpc::stream_packet_handler packet_handler(std::move(socket));
-
-            std::string buffer = "hello from client";
-            co_await packet_handler.send(net::buffer(buffer), net::use_awaitable);
-            buffer.clear();
-
-            co_await packet_handler.receive(buffer, net::use_awaitable);
-            EXPECT_EQ(buffer, "server reply: hello from client");
-        }
-        catch (std::exception &ex)
-        {
-            EXPECT_NO_THROW(throw ex);
-        }
-    };
-
-    auto server = []() -> net::awaitable<void> {
-        try
-        {
-            auto executor = co_await net::this_coro::executor;
-            auto acceptor = new net::local::stream_protocol::acceptor(executor, net::local::stream_protocol::endpoint{"test.sock"});
-            net::co_spawn(
-                executor,
-                [acceptor]() -> net::awaitable<void> {
-                    auto socket = co_await acceptor->async_accept(net::use_awaitable);
-                    EXPECT_TRUE(socket.is_open());
-                    mrpc::stream_packet_handler packet_handler(std::move(socket));
-
-                    std::string buffer;
-                    co_await packet_handler.receive(buffer, net::use_awaitable);
-                    EXPECT_EQ(buffer, "hello from client");
-
-                    buffer = "server reply: " + buffer;
-                    co_await packet_handler.send(net::buffer(buffer), net::use_awaitable);
+                    co_await packet_handler.async_send(net::buffer(buffer), net::use_awaitable);
                 }(),
                 net::detached);
         }
